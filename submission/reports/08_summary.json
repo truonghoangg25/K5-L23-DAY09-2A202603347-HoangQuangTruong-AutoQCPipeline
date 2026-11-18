@@ -1,0 +1,18 @@
+{
+  "verdict": {
+    "decision": "Hold",
+    "n_errors": 0,
+    "n_warn_images": 53,
+    "n_images": 193,
+    "warn_ratio": 0.2746,
+    "reasons": [
+      "Có 53/193 ảnh còn cảnh báo (27.46%), đạt/vượt ngưỡng Hold 10.00%."
+    ]
+  },
+  "reviewed": 80,
+  "budget": 80,
+  "seconds": 2.6,
+  "exported": "/home/penguin/ai-labs/K5-L23-DAY09-2A202603347-HoangQuangTruong-AutoQCPipeline/submission/export/clean_v1",
+  "config_sha1": "85896c93f04260c7e21a36164b433015b5a98bfd",
+  "review_sim_sha1": "7988ca22827f780a7043a2300490e679a1697154"
+}

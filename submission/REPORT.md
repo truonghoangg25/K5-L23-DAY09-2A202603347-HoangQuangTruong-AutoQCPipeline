@@ -1,6 +1,6 @@
 # Báo cáo Day 09 — Hoàng Quang Trường, 2A202603347
 
-> Xoá mọi `TODO(học viên)` và dòng gợi ý. Mỗi ý trả lời bằng **số lấy từ `submission/reports/`**, kèm mẫu số. Cả báo cáo ~1–2 trang.
+> Báo cáo sử dụng số liệu từ các tệp trong `submission/reports/`; các số đếm được ghi kèm mẫu số khi phù hợp.
 
 ## 1. Kết luận trước
 Pipeline kết luận **Hold**. Intake nhận 193/224 ảnh và loại 31/224 ảnh. Sau QC và mô phỏng duyệt 80 ảnh, còn 53/193 ảnh có cảnh báo chưa được người duyệt xử lý (27,46%), cao hơn ngưỡng Hold cố định 10%; thư mục export được tạo ở trạng thái bản nháp, chưa được phát hành.
@@ -47,9 +47,14 @@ Một điểm calibration có thể đánh lừa là pHash đo độ gần của
 (b) Các cảnh báo ngữ nghĩa vẫn cần người đánh giá, không thể coi kết quả model là nhãn đúng: vòng QC3 còn 90 dòng `POSSIBLE_MISSING` trên 60 ảnh và 32 dòng `POSSIBLE_LOOSE_BOX` trên 26 ảnh. Ví dụ `img_0018` có IoU 0.4470 và `img_0020` có IoU 0.3987 ở cảnh báo loose box. Ngoài ra còn 10 dòng `POSSIBLE_WRONG_CLASS` trên 9 ảnh; pipeline chỉ đưa cảnh báo để xem xét, không tự xác nhận lớp đúng. Các số dòng và số ảnh khác nhau vì một ảnh có thể có nhiều cảnh báo.
 
 ## 5. Train: raw vs clean (tùy chọn, chấm riêng)
-Chưa điền ở bước GitHub; sẽ cập nhật sau khi thực hiện phần train trên Colab theo đúng quy trình raw vs clean.
+Chưa chạy. Phần train so sánh raw vs clean chưa được thực hiện vì hiện tại mới hoàn tất pipeline QC và kiểm tra submission; phần huấn luyện sẽ được thực hiện riêng trên Colab. Do đó chưa có số liệu mAP50 để so sánh.
 
 ## 6. Quyết định và ghi chú AI
-Chưa hoàn thiện ở bước này; sẽ chốt quyết định cuối sau phần Colab và bổ sung ghi chú sử dụng AI dựa trên prompt, cách kiểm chứng code và một trường hợp AI sai có thật.
+(a) Quyết định hiện tại: **Hold**, chưa phát hành `clean_v1`. Cần người tiếp tục kiểm tra và xử lý các cảnh báo còn tồn đọng, sau đó chạy lại pipeline và gate. Với 193 ảnh và ngưỡng Hold 10% hiện tại, cần giảm số ảnh còn cảnh báo chưa được duyệt xuống tối đa 19 ảnh; đồng thời lần chạy tiếp theo không được còn lỗi bắt buộc.
+
+(b) Ghi chú sử dụng AI:
+- Prompt chính (tóm lược, không trích nguyên văn): yêu cầu ChatGPT đọc cấu trúc repo và hướng dẫn Lab 9, hỗ trợ triển khai các module QC/autofix/gate, rồi kiểm tra kết quả theo đúng template và quy định submission.
+- Cách kiểm chứng: đối chiếu yêu cầu trong tài liệu lab và source code; chạy test tự động (79 test đã qua), kiểm tra CSV/JSON đầu ra và chạy pipeline với ngân sách duyệt bằng 0 để xác nhận gate Rework, mã thoát 20 và không tạo export.
+- Một lần AI sai: ban đầu AI nhận định số 105 ảnh có cảnh báo trong QC3 và 53 ảnh trong kết quả gate là không khớp. Sau khi kiểm tra `gate.py`, xác định gate chỉ đếm ảnh còn cảnh báo chưa được duyệt; các ảnh đã nằm trong danh sách reviewed bị loại khỏi phép đếm. Vì vậy hai số đo hai tập ảnh khác nhau, không phải lỗi tính toán của pipeline.
 
 *(Thưởng +2, tùy chọn)* CVAT: chưa thực hiện.
