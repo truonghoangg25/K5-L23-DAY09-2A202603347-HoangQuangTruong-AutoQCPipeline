@@ -46,6 +46,8 @@ Một điểm calibration có thể đánh lừa là pHash đo độ gần của
 
 (b) Các cảnh báo ngữ nghĩa vẫn cần người đánh giá, không thể coi kết quả model là nhãn đúng: vòng QC3 còn 90 dòng `POSSIBLE_MISSING` trên 60 ảnh và 32 dòng `POSSIBLE_LOOSE_BOX` trên 26 ảnh. Ví dụ `img_0018` có IoU 0.4470 và `img_0020` có IoU 0.3987 ở cảnh báo loose box. Ngoài ra còn 10 dòng `POSSIBLE_WRONG_CLASS` trên 9 ảnh; pipeline chỉ đưa cảnh báo để xem xét, không tự xác nhận lớp đúng. Các số dòng và số ảnh khác nhau vì một ảnh có thể có nhiều cảnh báo.
 
+(c) **Giới hạn của phát hiện ảnh trùng gần:** pHash chỉ đo khoảng cách giữa các hash, không xác nhận hai ảnh có thực sự tương đương về nội dung hoặc có thể thay thế nhau. Intake đã loại 7 ảnh `DUP_IMAGE_NEAR`, trong đó có 3 cặp ở đúng ngưỡng 16; các cặp này chưa được kiểm tra trực quan. Vì vậy, pipeline có thể đưa ra quyết định loại ảnh chưa phù hợp về mặt ngữ nghĩa; cần người xem lại ảnh trước khi coi các cặp near-duplicate là dữ liệu có thể loại bỏ an toàn.
+
 ## 5. Train: raw vs clean (tùy chọn, chấm riêng)
 
 Thí nghiệm được thực hiện trên Google Colab với GPU Tesla T4, mô hình YOLO26n, 20 epochs và 2 seed cho mỗi phương án. Hai phương án dùng chung tập validation 40 ảnh và tập test 100 ảnh.
@@ -60,6 +62,14 @@ Thí nghiệm được thực hiện trên Google Colab với GPU Tesla T4, mô 
 | Clean | 0.7187 ± 0.0095 | 0.4909 ± 0.0161 | 0.7506 ± 0.0043 | 0.6306 ± 0.0105 |
 
 Chênh lệch mAP50 (clean − raw) là **−0.0071**. Clean có mAP50 thấp hơn raw trong thí nghiệm này; tuy nhiên chỉ có 2 seed mỗi phương án nên chưa đủ cơ sở để kết luận khác biệt có ý nghĩa thống kê hoặc khẳng định làm sạch dữ liệu là nguyên nhân khiến kết quả giảm. Raw còn có 11 cảnh báo `LEAK_TEST`, nên kết quả raw cũng có nguy cơ bị ảnh hưởng bởi rò rỉ dữ liệu; mức ảnh hưởng chưa được định lượng bằng một thí nghiệm đối chứng riêng.
+
+Hai nguyên nhân có thể góp phần tạo ra chênh lệch:
+
+1. **Rò rỉ dữ liệu giữa train và test:** Raw có 11 ảnh `LEAK_TEST`, trong khi intake đã loại các ảnh này khỏi clean. Điều này tạo nguy cơ làm kết quả raw cao hơn thực tế, nhưng mức ảnh hưởng chưa được đo. Cách kiểm chứng: huấn luyện thêm một baseline raw sau khi loại đúng 11 ảnh này, giữ nguyên model, epochs, batch, seed, validation và test; so sánh với raw ban đầu.
+
+2. **Khác biệt về chất lượng nhãn:** Raw giữ nhãn ban đầu, còn clean đã qua QC và autofix. Các cảnh báo như `POSSIBLE_MISSING`, `POSSIBLE_LOOSE_BOX` và `POSSIBLE_WRONG_CLASS` cho thấy nhãn có thể ảnh hưởng đến kết quả học. Cách kiểm chứng: trên cùng một tập ảnh train đã loại leakage và ảnh corrupt, tạo hai phiên bản nhãn: nhãn gốc và nhãn đã được người kiểm tra xác nhận. Huấn luyện hai phiên bản với cùng model, epochs, batch, seed, validation và test; so sánh mAP50 và AP50 theo lớp. Cách làm này giúp hạn chế việc nhầm ảnh hưởng của chất lượng nhãn với ảnh hưởng do khác số lượng hoặc thành phần ảnh.
+
+Hai phép kiểm chứng trên chưa được thực hiện trong thí nghiệm hiện tại. Vì vậy, đây là các giả thuyết cần kiểm tra, không phải kết luận về nguyên nhân gây ra mức chênh lệch mAP50 -0.0071.
 
 Kết quả chi tiết theo seed và phân tích giới hạn được lưu tại `submission/results/comparison.md`, `submission/results/comparison.json` và `submission/results/ANALYSIS.md`.
 
