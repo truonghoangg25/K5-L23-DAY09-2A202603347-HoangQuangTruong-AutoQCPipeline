@@ -47,7 +47,21 @@ Một điểm calibration có thể đánh lừa là pHash đo độ gần của
 (b) Các cảnh báo ngữ nghĩa vẫn cần người đánh giá, không thể coi kết quả model là nhãn đúng: vòng QC3 còn 90 dòng `POSSIBLE_MISSING` trên 60 ảnh và 32 dòng `POSSIBLE_LOOSE_BOX` trên 26 ảnh. Ví dụ `img_0018` có IoU 0.4470 và `img_0020` có IoU 0.3987 ở cảnh báo loose box. Ngoài ra còn 10 dòng `POSSIBLE_WRONG_CLASS` trên 9 ảnh; pipeline chỉ đưa cảnh báo để xem xét, không tự xác nhận lớp đúng. Các số dòng và số ảnh khác nhau vì một ảnh có thể có nhiều cảnh báo.
 
 ## 5. Train: raw vs clean (tùy chọn, chấm riêng)
-Chưa chạy. Phần train so sánh raw vs clean chưa được thực hiện vì hiện tại mới hoàn tất pipeline QC và kiểm tra submission; phần huấn luyện sẽ được thực hiện riêng trên Colab. Do đó chưa có số liệu mAP50 để so sánh.
+
+Thí nghiệm được thực hiện trên Google Colab với GPU Tesla T4, mô hình YOLO26n, 20 epochs và 2 seed cho mỗi phương án. Hai phương án dùng chung tập validation 40 ảnh và tập test 100 ảnh.
+
+- Raw: thư mục train có 224 ảnh đầu vào. Log Ultralytics ghi nhận 11 ảnh corrupt và bỏ qua; các nguyên nhân gồm ảnh không đọc được, tọa độ không hợp lệ và class ID ngoài phạm vi 0–3 hoặc âm.
+- Clean: 193 ảnh đầu vào; log ghi nhận 0 ảnh corrupt và 7 ảnh background.
+- Raw giữ nguyên nhãn ban đầu; clean sử dụng nhãn từ pipeline QC. Kết quả là so sánh hai bộ dữ liệu theo quy trình hiện tại, không phải phép đo riêng tác động của từng loại lỗi nhãn.
+
+| Phương án | mAP50 (TB ± SD) | mAP50-95 (TB ± SD) | Precision (TB ± SD) | Recall (TB ± SD) |
+|---|---:|---:|---:|---:|
+| Raw | 0.7258 ± 0.0002 | 0.5117 ± 0.0038 | 0.7635 ± 0.0612 | 0.6490 ± 0.0281 |
+| Clean | 0.7187 ± 0.0095 | 0.4909 ± 0.0161 | 0.7506 ± 0.0043 | 0.6306 ± 0.0105 |
+
+Chênh lệch mAP50 (clean − raw) là **−0.0071**. Clean có mAP50 thấp hơn raw trong thí nghiệm này; tuy nhiên chỉ có 2 seed mỗi phương án nên chưa đủ cơ sở để kết luận khác biệt có ý nghĩa thống kê hoặc khẳng định làm sạch dữ liệu là nguyên nhân khiến kết quả giảm. Raw còn có 11 cảnh báo `LEAK_TEST`, nên kết quả raw cũng có nguy cơ bị ảnh hưởng bởi rò rỉ dữ liệu; mức ảnh hưởng chưa được định lượng bằng một thí nghiệm đối chứng riêng.
+
+Kết quả chi tiết theo seed và phân tích giới hạn được lưu tại `submission/results/comparison.md`, `submission/results/comparison.json` và `submission/results/ANALYSIS.md`.
 
 ## 6. Quyết định và ghi chú AI
 (a) Quyết định hiện tại: **Hold**, chưa phát hành `clean_v1`. Cần người tiếp tục kiểm tra và xử lý các cảnh báo còn tồn đọng, sau đó chạy lại pipeline và gate. Với 193 ảnh và ngưỡng Hold 10% hiện tại, cần giảm số ảnh còn cảnh báo chưa được duyệt xuống tối đa 19 ảnh; đồng thời lần chạy tiếp theo không được còn lỗi bắt buộc.
@@ -55,6 +69,6 @@ Chưa chạy. Phần train so sánh raw vs clean chưa được thực hiện v�
 (b) Ghi chú sử dụng AI:
 - Prompt chính (tóm lược, không trích nguyên văn): yêu cầu ChatGPT đọc cấu trúc repo và hướng dẫn Lab 9, hỗ trợ triển khai các module QC/autofix/gate, rồi kiểm tra kết quả theo đúng template và quy định submission.
 - Cách kiểm chứng: đối chiếu yêu cầu trong tài liệu lab và source code; chạy test tự động (79 test đã qua), kiểm tra CSV/JSON đầu ra và chạy pipeline với ngân sách duyệt bằng 0 để xác nhận gate Rework, mã thoát 20 và không tạo export.
-- Một lần AI sai: ban đầu AI nhận định số 105 ảnh có cảnh báo trong QC3 và 53 ảnh trong kết quả gate là không khớp. Sau khi kiểm tra `gate.py`, xác định gate chỉ đếm ảnh còn cảnh báo chưa được duyệt; các ảnh đã nằm trong danh sách reviewed bị loại khỏi phép đếm. Vì vậy hai số đo hai tập ảnh khác nhau, không phải lỗi tính toán của pipeline.
+- Một lần AI sai: AI từng khẳng định 79 test đã passed trước khi có output kiểm thử xác nhận. Đây là kết luận chưa có bằng chứng tại thời điểm đưa ra. Sau đó, người dùng chạy `make check-core` và xác nhận thực tế 79 test passed trong 22.88 giây. Bài học là không được khẳng định kết quả kiểm thử trước khi có output thực tế.
 
 *(Thưởng +2, tùy chọn)* CVAT: chưa thực hiện.
